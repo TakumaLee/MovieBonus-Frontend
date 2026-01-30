@@ -1,92 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import {
+  signIn,
+  getAdminUser,
+  generateSessionToken,
+  createSession,
+} from '@/lib/supabase/admin-auth';
 
-const BACKEND_URL = process.env.NODE_ENV === 'production'
-  ? 'https://moviebonus-nodejs-backend-777964931661.asia-east1.run.app'
-  : 'http://localhost:3000';
-
+/**
+ * POST /api/admin/login
+ * Admin login — authenticates via Supabase Auth, creates a session.
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // Get cookies from the request
-    const cookieHeader = request.headers.get('cookie') || '';
-    
-    // Forward the request to backend
-    const response = await fetch(`${BACKEND_URL}/api/admin/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Forward important headers
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || request.ip || '',
-        'User-Agent': request.headers.get('user-agent') || '',
-        'Origin': request.headers.get('origin') || '',
-        // Identify this as a trusted same-origin proxy request
-        'X-Same-Origin-Proxy': 'true',
-        // Forward cookies
-        ...(cookieHeader && { 'Cookie': cookieHeader }),
-      },
-      body: JSON.stringify(body),
+    const { email, password, csrfToken } = body;
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { success: false, error: '請提供電子郵件和密碼' },
+        { status: 400 }
+      );
+    }
+
+    // CSRF validation — compare with cookie-stored token
+    const cookieStore = await cookies();
+    const storedCsrf = cookieStore.get('admin-csrf-token')?.value;
+
+    if (csrfToken && storedCsrf && csrfToken !== storedCsrf) {
+      return NextResponse.json(
+        { success: false, error: '請求已過期，請重新整理頁面' },
+        { status: 400 }
+      );
+    }
+
+    // Authenticate with Supabase
+    let authData;
+    try {
+      authData = await signIn(email, password);
+    } catch (error: any) {
+      if (error.message === 'Invalid login credentials' || error.status === 400) {
+        return NextResponse.json(
+          { success: false, error: '電子郵件或密碼錯誤' },
+          { status: 401 }
+        );
+      }
+      throw error;
+    }
+
+    if (!authData.user) {
+      return NextResponse.json(
+        { success: false, error: '電子郵件或密碼錯誤' },
+        { status: 401 }
+      );
+    }
+
+    // Check admin status
+    const adminUser = await getAdminUser(authData.user.id);
+    if (!adminUser || !adminUser.is_active) {
+      return NextResponse.json(
+        { success: false, error: '您沒有管理員權限' },
+        { status: 403 }
+      );
+    }
+
+    // Create session
+    const sessionToken = generateSessionToken();
+    const sessionExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    await createSession({
+      id: sessionToken,
+      user_id: authData.user.id,
+      expires_at: sessionExpires.toISOString(),
+      ip_address: ip,
+      user_agent: userAgent,
+      last_activity: new Date().toISOString(),
     });
 
-    const data = await response.json();
-    
-    // Create response
-    const nextResponse = NextResponse.json(data, { status: response.status });
-    
-    // Forward any cookies from backend
-    // Note: Due to fetch API limitations, we can only get the first set-cookie header
-    // But that's usually enough for our auth cookies
-    const setCookieHeader = response.headers.get('set-cookie');
-    
-    if (setCookieHeader) {
-      try {
-        // Parse the cookie more carefully to handle values that may contain special characters
-        const cookieParts = setCookieHeader.split(';');
-        const nameValuePart = cookieParts[0];
-        
-        if (nameValuePart) {
-          // Find the first = to split name and value
-          const firstEqualIndex = nameValuePart.indexOf('=');
-          if (firstEqualIndex > 0) {
-            const name = nameValuePart.substring(0, firstEqualIndex).trim();
-            const value = nameValuePart.substring(firstEqualIndex + 1).trim();
-            
-            // Set cookie with same-site lax for better compatibility
-            nextResponse.cookies.set({
-              name: name,
-              value: value,
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              path: '/',
-              maxAge: 60 * 60 * 24 * 7, // 7 days
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing cookie:', error);
-        // Don't throw - continue with response even if cookie parsing fails
-      }
-    }
-    
-    // If login successful and token provided, also set it as HTTP-only cookie
-    if (data.success && data.token) {
-      nextResponse.cookies.set({
-        name: 'admin-token',
-        value: data.token,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    }
-    
-    return nextResponse;
+    // Build response
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        id: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.display_name || adminUser.email,
+        role: adminUser.role || 'admin',
+      },
+    });
+
+    // Set session cookie
+    response.cookies.set('admin-session', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      expires: sessionExpires,
+    });
+
+    // Clear CSRF cookies
+    response.cookies.delete('admin-csrf-session');
+    response.cookies.delete('admin-csrf-token');
+
+    return response;
   } catch (error) {
-    console.error('Login proxy error:', error);
+    console.error('Admin login error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: '登入失敗，請稍後再試' },
       { status: 500 }
     );
   }
