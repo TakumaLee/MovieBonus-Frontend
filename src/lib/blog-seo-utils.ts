@@ -269,35 +269,57 @@ export function generateBlogPostStructuredData(post: BlogPost): any {
       '@type': 'ImageObject',
       url: post.cover_image,
       width: 1200,
-      height: 630
+      height: 630,
+      alt: `${post.title} - ${SITE_NAME}`
     } : undefined,
     author: post.author ? {
       '@type': 'Person',
       name: post.author.name,
-      description: post.author.bio
+      description: post.author.bio,
+      url: post.author.social_links?.twitter ? `https://twitter.com/${post.author.social_links.twitter}` : undefined,
+      sameAs: [
+        post.author.social_links?.twitter ? `https://twitter.com/${post.author.social_links.twitter}` : '',
+        post.author.social_links?.facebook ? `https://facebook.com/${post.author.social_links.facebook}` : '',
+      ].filter(Boolean)
     } : {
       '@type': 'Organization',
-      name: SITE_NAME
+      name: SITE_NAME,
+      url: SITE_URL
     },
     publisher: {
       '@type': 'Organization',
       name: SITE_NAME,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/logo.png`
-      }
+        url: `${SITE_URL}/logo.png`,
+        width: 200,
+        height: 60
+      },
+      url: SITE_URL,
+      sameAs: [
+        'https://www.facebook.com/moviebonus',
+        'https://twitter.com/moviebonus',
+        'https://line.me/ti/p/@moviebonus'
+      ]
     },
     datePublished: post.published_at || post.created_at,
     dateModified: post.updated_at,
     articleSection: post.category?.name,
     keywords: post.tags.join(', '),
     wordCount: post.content.split(/\s+/).length,
-    timeRequired: `PT${post.reading_time || 5}M`,
+    timeRequired: `PT${post.reading_time || calculateReadingTime(post.content)}M`,
     url: `${SITE_URL}/blog/${post.slug}`,
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': `${SITE_URL}/blog/${post.slug}`
     },
+    isPartOf: {
+      '@type': 'Blog',
+      '@id': `${SITE_URL}/blog`,
+      name: `${SITE_NAME} 電影部落格`,
+      url: `${SITE_URL}/blog`
+    },
+    inLanguage: 'zh-TW',
     // Add movie-specific structured data if related to movies
     ...(post.primary_movie && {
       about: {
@@ -309,6 +331,8 @@ export function generateBlogPostStructuredData(post: BlogPost): any {
         director: post.primary_movie.director.map(name => ({ '@type': 'Person', name })),
         actor: post.primary_movie.movie_cast.map(name => ({ '@type': 'Person', name })),
         genre: post.primary_movie.genre,
+        image: post.primary_movie.poster_url,
+        url: `${SITE_URL}/movie/${post.primary_movie.id}`
       }
     })
   };
@@ -428,6 +452,332 @@ export function optimizeMetaDescription(content: string, maxLength = 160): strin
   return result || cleanContent.substring(0, maxLength - 3) + '...';
 }
 
+/**
+ * Generate FAQ structured data for blog posts
+ */
+export function generateFAQStructuredData(faqs: Array<{ question: string; answer: string }>): any {
+  if (!faqs || faqs.length === 0) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer
+      }
+    }))
+  };
+}
+
+/**
+ * Generate Review structured data for movie review posts
+ */
+export function generateReviewStructuredData(
+  post: BlogPost,
+  rating?: { value: number; max: number; min: number }
+): any {
+  if (!post.primary_movie) return null;
+
+  const reviewData: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Review',
+    itemReviewed: {
+      '@type': 'Movie',
+      name: post.primary_movie.title,
+      alternateName: post.primary_movie.english_title,
+      description: post.primary_movie.synopsis,
+      director: post.primary_movie.director.map(name => ({ '@type': 'Person', name })),
+      actor: post.primary_movie.movie_cast.map(name => ({ '@type': 'Person', name })),
+      genre: post.primary_movie.genre,
+      datePublished: post.primary_movie.release_date,
+      image: post.primary_movie.poster_url
+    },
+    author: post.author ? {
+      '@type': 'Person',
+      name: post.author.name
+    } : {
+      '@type': 'Organization',
+      name: SITE_NAME
+    },
+    datePublished: post.published_at || post.created_at,
+    description: post.excerpt || post.content.substring(0, 160),
+    inLanguage: 'zh-TW',
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL
+    }
+  };
+
+  if (rating) {
+    reviewData.reviewRating = {
+      '@type': 'Rating',
+      ratingValue: rating.value,
+      bestRating: rating.max,
+      worstRating: rating.min
+    };
+  }
+
+  return reviewData;
+}
+
+/**
+ * Generate How-to structured data for guide posts
+ */
+export function generateHowToStructuredData(
+  post: BlogPost,
+  steps: Array<{ name: string; text: string; image?: string }>
+): any {
+  if (!steps || steps.length === 0) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: post.title,
+    description: post.excerpt || post.content.substring(0, 160),
+    image: post.cover_image ? {
+      '@type': 'ImageObject',
+      url: post.cover_image
+    } : undefined,
+    estimatedCost: {
+      '@type': 'MonetaryAmount',
+      currency: 'TWD',
+      value: '0'
+    },
+    supply: steps.some(step => step.name.includes('需要') || step.name.includes('準備')) ? [
+      {
+        '@type': 'HowToSupply',
+        name: '電影票或相關證明'
+      }
+    ] : undefined,
+    tool: [
+      {
+        '@type': 'HowToTool',
+        name: '手機或電腦'
+      }
+    ],
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.name,
+      text: step.text,
+      ...(step.image && {
+        image: {
+          '@type': 'ImageObject',
+          url: step.image
+        }
+      })
+    })),
+    totalTime: `PT${post.reading_time || calculateReadingTime(post.content)}M`,
+    author: post.author ? {
+      '@type': 'Person',
+      name: post.author.name
+    } : {
+      '@type': 'Organization',
+      name: SITE_NAME
+    },
+    datePublished: post.published_at || post.created_at,
+    dateModified: post.updated_at
+  };
+}
+
+/**
+ * Generate enhanced breadcrumb structured data with movie context
+ */
+export function generateEnhancedBreadcrumbStructuredData(
+  items: Array<{ name: string; url: string }>,
+  post?: BlogPost
+): any {
+  const breadcrumbItems = [...items];
+
+  // Add movie breadcrumb if post is movie-related
+  if (post?.primary_movie) {
+    const movieIndex = breadcrumbItems.findIndex(item => item.name === post.title);
+    if (movieIndex > 0) {
+      breadcrumbItems.splice(movieIndex, 0, {
+        name: post.primary_movie.title,
+        url: `${SITE_URL}/movie/${post.primary_movie.id}`
+      });
+    }
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: {
+        '@type': 'WebPage',
+        '@id': item.url,
+        name: item.name
+      }
+    }))
+  };
+}
+
+/**
+ * Generate video structured data for posts with embedded videos
+ */
+export function generateVideoStructuredData(
+  post: BlogPost,
+  videoData: {
+    embedUrl: string;
+    thumbnailUrl: string;
+    duration?: string; // ISO 8601 duration format
+    uploadDate?: string;
+    description?: string;
+  }
+): any {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: post.title,
+    description: videoData.description || post.excerpt || post.content.substring(0, 160),
+    thumbnailUrl: videoData.thumbnailUrl,
+    embedUrl: videoData.embedUrl,
+    contentUrl: videoData.embedUrl,
+    duration: videoData.duration,
+    uploadDate: videoData.uploadDate || post.published_at || post.created_at,
+    author: post.author ? {
+      '@type': 'Person',
+      name: post.author.name
+    } : {
+      '@type': 'Organization',
+      name: SITE_NAME
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo.png`
+      }
+    },
+    inLanguage: 'zh-TW'
+  };
+}
+
+/**
+ * Extract FAQ content from blog post content
+ */
+export function extractFAQsFromContent(content: string): Array<{ question: string; answer: string }> {
+  const faqs: Array<{ question: string; answer: string }> = [];
+  
+  // Look for FAQ patterns in content
+  const faqPatterns = [
+    /(?:問題?|Q|Question)[:：]\s*(.+?)(?:\r?\n|\r)(?:答案?|A|Answer)[:：]\s*(.+?)(?=(?:\r?\n|\r)(?:問題?|Q|Question)|$)/g,
+    /#{2,3}\s*(.+\?)\s*(?:\r?\n|\r)(.+?)(?=#{2,3}|$)/g,
+    /<dt[^>]*>(.+?)<\/dt>\s*<dd[^>]*>(.+?)<\/dd>/g
+  ];
+
+  faqPatterns.forEach(pattern => {
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const question = match[1].trim().replace(/<[^>]*>/g, '');
+      const answer = match[2].trim().replace(/<[^>]*>/g, '');
+      
+      if (question && answer && question.length > 10 && answer.length > 10) {
+        faqs.push({ question, answer });
+      }
+    }
+  });
+
+  return faqs;
+}
+
+/**
+ * Extract steps for How-to structured data
+ */
+export function extractStepsFromContent(content: string): Array<{ name: string; text: string; image?: string }> {
+  const steps: Array<{ name: string; text: string; image?: string }> = [];
+  
+  // Look for numbered steps or ordered lists
+  const stepPatterns = [
+    /(?:步驟|Step)\s*(\d+)[:：]\s*(.+?)(?=(?:步驟|Step)\s*\d+|$)/g,
+    /<ol[^>]*>[\s\S]*?<\/ol>/g,
+    /(\d+)\.?\s*(.+?)(?=\d+\.|$)/g
+  ];
+
+  // Extract from ordered lists
+  const olMatch = content.match(/<ol[^>]*>([\s\S]*?)<\/ol>/);
+  if (olMatch) {
+    const listContent = olMatch[1];
+    const listItems = listContent.match(/<li[^>]*>([\s\S]*?)<\/li>/g);
+    
+    if (listItems) {
+      listItems.forEach((item, index) => {
+        const text = item.replace(/<[^>]*>/g, '').trim();
+        if (text.length > 10) {
+          steps.push({
+            name: `步驟 ${index + 1}`,
+            text: text
+          });
+        }
+      });
+    }
+  }
+
+  return steps;
+}
+
+/**
+ * Generate image optimization suggestions for SEO
+ */
+export function generateImageOptimizationSuggestions(post: BlogPost): {
+  coverImage?: string;
+  contentImages?: Array<{ src: string; suggestedAlt: string }>;
+} {
+  const suggestions: any = {};
+  
+  // Cover image alt suggestion
+  if (post.cover_image) {
+    suggestions.coverImage = `${post.title} - ${post.category?.name || '電影'} - ${SITE_NAME}`;
+  }
+  
+  // Extract images from content and suggest alt text
+  const imageRegex = /<img[^>]+src=['"]([^'"]+)['"][^>]*>/g;
+  const contentImages = [];
+  let match;
+  
+  while ((match = imageRegex.exec(post.content)) !== null) {
+    const src = match[1];
+    let suggestedAlt = `${post.title}`;
+    
+    // Add context based on surrounding text
+    const imgIndex = match.index;
+    const beforeText = post.content.substring(Math.max(0, imgIndex - 100), imgIndex);
+    const afterText = post.content.substring(imgIndex, imgIndex + 100);
+    
+    // Look for descriptive context
+    const contextClues = [...beforeText.matchAll(/([^。！？\n]{10,50})/g), ...afterText.matchAll(/([^。！？\n]{10,50})/g)];
+    if (contextClues.length > 0) {
+      suggestedAlt += ` - ${contextClues[0][1].trim()}`;
+    }
+    
+    if (post.primary_movie) {
+      suggestedAlt += ` - ${post.primary_movie.title}`;
+    }
+    
+    suggestedAlt += ` - ${SITE_NAME}`;
+    
+    contentImages.push({
+      src,
+      suggestedAlt: suggestedAlt.substring(0, 125) // Keep alt text under 125 characters
+    });
+  }
+  
+  if (contentImages.length > 0) {
+    suggestions.contentImages = contentImages;
+  }
+  
+  return suggestions;
+}
+
 export default {
   generateBlogHomeMetadata,
   generateBlogPostMetadata,
@@ -437,6 +787,14 @@ export default {
   generateBlogPostStructuredData,
   generateBlogHomeStructuredData,
   generateBreadcrumbStructuredData,
+  generateFAQStructuredData,
+  generateReviewStructuredData,
+  generateHowToStructuredData,
+  generateEnhancedBreadcrumbStructuredData,
+  generateVideoStructuredData,
+  extractFAQsFromContent,
+  extractStepsFromContent,
+  generateImageOptimizationSuggestions,
   calculateReadingTime,
   generateSocialShareUrls,
   optimizeMetaDescription,
