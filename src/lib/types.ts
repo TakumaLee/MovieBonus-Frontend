@@ -12,6 +12,7 @@
 export type MovieStatus = 'showing' | 'coming_soon' | 'ended';
 export type GiftType = 'physical' | 'digital' | 'experience' | 'discount';
 export type FormatType = 'digital' | 'imax' | '4dx' | 'vr' | 'titan' | 'mucrown';
+export type DataSource = 'manual' | 'scraper' | 'user-report' | 'vieshow' | 'ambassador' | 'showtime' | 'miramar' | 'in89';
 
 // Movie entity
 export interface Movie {
@@ -42,6 +43,12 @@ export interface Movie {
   og_title?: string;
   og_description?: string;
   canonical_url?: string;
+  // Data provenance fields (from MVP integration)
+  /** Data source tag for transparency */
+  data_source?: DataSource;
+  /** true = confirmed real data; false/undefined = unverified */
+  is_verified?: boolean;
+
   created_at: string;
   updated_at: string;
 }
