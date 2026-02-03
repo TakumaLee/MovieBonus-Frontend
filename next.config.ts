@@ -3,6 +3,11 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   trailingSlash: true,
+  
+  // Turbopack 配置 - 修復 build error
+  turbopack: {
+    // 空配置，避免 webpack + turbopack 衝突
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
