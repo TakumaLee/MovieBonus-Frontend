@@ -45,6 +45,14 @@ export interface MovieData {
   isVerified?: boolean;
   /** Data source tag for transparency */
   dataSource?: DataSource;
+  /** 是否為重映/再上映版本（4K修復、IMAX紀念版等） */
+  isRerelease?: boolean;
+  /** TMDB 電影 ID */
+  tmdbId?: number;
+  /** TMDB 評分 */
+  voteAverage?: number;
+  /** 背景圖 URL */
+  backdropUrl?: string;
 }
 
 export interface Theater {
@@ -228,6 +236,7 @@ export const movies: MovieData[] = [
     ],
     dataSource: "manual",
     isVerified: true,
+    isRerelease: true,
   },
   {
     id: "butt-detective-star-moon",
