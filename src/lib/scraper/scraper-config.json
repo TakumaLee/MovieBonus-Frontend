@@ -1,0 +1,90 @@
+{
+  "$schema": "scraper-config-schema",
+  "version": "0.1.0",
+  "description": "台灣各大影城爬蟲設定檔",
+  "theaters": [
+    {
+      "id": "vieshow",
+      "name": "威秀影城",
+      "enabled": true,
+      "baseUrl": "https://www.vscinemas.com.tw",
+      "endpoints": {
+        "movieList": "/vsweb/film/index.aspx",
+        "movieDetail": "/vsweb/film/detail.aspx?id={movieId}",
+        "events": "/vsweb/activity/index.aspx"
+      },
+      "selectors": {
+        "movieList": ".film-list .film-item",
+        "movieTitle": ".film-title",
+        "movieLink": ".film-item a",
+        "eventList": ".activity-list .activity-item"
+      },
+      "notes": "威秀有 WAF 保護 (Akamai)，直接 fetch 會被 403。需要用 headless browser 或找 API endpoint。"
+    },
+    {
+      "id": "showtimes",
+      "name": "秀泰影城",
+      "enabled": false,
+      "baseUrl": "https://www.showtimes.com.tw",
+      "endpoints": {
+        "events": "/events"
+      },
+      "selectors": {},
+      "notes": "秀泰是 SPA (買買購票系統)，需要 headless browser 執行 JS。"
+    },
+    {
+      "id": "ambassador",
+      "name": "國賓影城",
+      "enabled": false,
+      "baseUrl": "https://www.ambassador.com.tw",
+      "endpoints": {
+        "movieList": "/Visita/Movies/NowShowing"
+      },
+      "selectors": {},
+      "notes": "國賓使用 Visita 系統。"
+    },
+    {
+      "id": "miramar",
+      "name": "美麗華影城",
+      "enabled": false,
+      "baseUrl": "https://www.miramarcinemas.tw",
+      "endpoints": {
+        "movieList": "/movies.html"
+      },
+      "selectors": {},
+      "notes": "美麗華官網相對簡單。"
+    },
+    {
+      "id": "in89",
+      "name": "in89 豪華數位影城",
+      "enabled": false,
+      "baseUrl": "https://www.in89.com.tw",
+      "endpoints": {
+        "movieList": "/cinema/intheaters"
+      },
+      "selectors": {},
+      "notes": "in89 官網。"
+    }
+  ],
+  "alternativeSources": [
+    {
+      "id": "atmovies",
+      "name": "開眼電影網",
+      "baseUrl": "https://www.atmovies.com.tw",
+      "endpoints": {
+        "nowShowing": "/movie/now/",
+        "movieDetail": "/movie/{atmoviesId}/"
+      },
+      "notes": "最佳的電影基本資料來源，可正常 fetch。無特典資訊。"
+    },
+    {
+      "id": "ptt",
+      "name": "PTT 電影版",
+      "baseUrl": "https://www.ptt.cc",
+      "endpoints": {
+        "movieBoard": "/bbs/movie/index.html"
+      },
+      "notes": "PTT 電影版有時會有特典情報討論串。"
+    }
+  ]
+}

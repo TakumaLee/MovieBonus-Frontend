@@ -340,6 +340,53 @@ export async function parseFacebookBonuses(
 }
 
 // ============================================================
+// atmovies 電影列表爬蟲（備用資料來源）
+// ============================================================
+
+const ATMOVIES_URL = "https://www.atmovies.com.tw/movie/now/";
+
+export interface AtmoviesMovie {
+  title: string;
+  releaseDate: string;
+  url: string;
+}
+
+export async function scrapeAtmoviesNowShowing(): Promise<AtmoviesMovie[]> {
+  const result = await fetchPage(ATMOVIES_URL, { timeout: 15000 });
+  if (!result.success) {
+    console.error(
+      `[Light Scraper] Failed to fetch atmovies: ${result.error}`
+    );
+    return [];
+  }
+
+  const $ = cheerio.load(result.html);
+  const movies: AtmoviesMovie[] = [];
+
+  $("ul.filmList li, .filmListAll li, .at0 li").each((_i, el) => {
+    const titleEl = $(el).find("a").first();
+    const title = titleEl.text().trim();
+    const href = titleEl.attr("href") || "";
+    const dateText = $(el).find(".runtime, .date, span").text().trim();
+
+    if (title) {
+      movies.push({
+        title,
+        releaseDate: dateText || "",
+        url: href.startsWith("http")
+          ? href
+          : `https://www.atmovies.com.tw${href}`,
+      });
+    }
+  });
+
+  console.log(
+    `[Light Scraper] atmovies: found ${movies.length} now-showing movies`
+  );
+  return movies;
+}
+
+// ============================================================
 // 主進入點
 // ============================================================
 

@@ -20,13 +20,21 @@ export {
   BONUS_EXTRACTION_PROMPT,
 } from "./llm-parser";
 
+// --- 威秀影城 fetch 版（POC）---
+export { runVieshowScraper, scrapeVieshowMovies } from "./vieshow";
+
 // --- 輕量爬蟲（Vercel 相容，fetch + cheerio）---
 export {
   runLightScrape,
   scrapeAllFacebookPages,
   parseFacebookBonuses,
+  scrapeAtmoviesNowShowing,
 } from "./light-scraper";
-export type { LightScrapeResult, FacebookPost } from "./light-scraper";
+export type {
+  LightScrapeResult,
+  FacebookPost,
+  AtmoviesMovie,
+} from "./light-scraper";
 
 // --- 影城爬蟲（改進版，含 WAF fallback）---
 export { scrapeAllTheaters, THEATER_CONFIGS } from "./theater-scraper";
