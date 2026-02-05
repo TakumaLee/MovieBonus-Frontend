@@ -20,6 +20,7 @@ import { scrapeAllFacebookPages, parseFacebookBonuses } from "@/lib/scraper/ligh
 import { runNowShowingTracker } from "@/lib/scraper/now-showing";
 import { detectRerelease } from "@/lib/scraper/rerelease";
 import { mergeScrapedBonuses } from "@/lib/matcher";
+import { saveMoviesToSupabase, saveMoviesDirectToSupabase } from "@/lib/supabase-sync";
 import type { MovieData } from "@/data/movies";
 import type { ScrapedBonus } from "@/lib/scraper/types";
 
@@ -104,7 +105,40 @@ export async function GET(request: Request): Promise<Response> {
       `[API /scrape] Merged: ${mergedMovies.length} movies with bonus data`
     );
 
-    // Step 6: 回傳結果（不寫檔，讓呼叫端決定如何處理）
+    // Step 6: 寫入 Supabase（新增！）
+    console.log("[API /scrape] Step 6: Saving to Supabase...");
+    let supabaseSaveResult = null;
+    
+    if (mergedMovies.length > 0) {
+      try {
+        // 優先嘗試 Python Backend API
+        supabaseSaveResult = await saveMoviesToSupabase(mergedMovies);
+        
+        if (!supabaseSaveResult.success) {
+          console.log("[API /scrape] Python Backend failed, trying direct Supabase...");
+          // Fallback: 直接寫入 Supabase
+          supabaseSaveResult = await saveMoviesDirectToSupabase(mergedMovies);
+        }
+        
+        console.log(`[API /scrape] Supabase result: ${supabaseSaveResult.savedCount}/${mergedMovies.length} saved`);
+        
+        if (supabaseSaveResult.errors.length > 0) {
+          console.warn("[API /scrape] Supabase errors:", supabaseSaveResult.errors.slice(0, 3));
+        }
+      } catch (saveError) {
+        console.error("[API /scrape] Supabase save failed:", saveError);
+        supabaseSaveResult = {
+          success: false,
+          message: saveError instanceof Error ? saveError.message : String(saveError),
+          savedCount: 0,
+          errors: [saveError instanceof Error ? saveError.message : String(saveError)]
+        };
+      }
+    } else {
+      console.log("[API /scrape] No movies to save, skipping Supabase");
+    }
+
+    // Step 7: 回傳結果（包含 Supabase 同步狀態）
     const output = {
       success: true,
       lastScrapedAt: new Date().toISOString(),
@@ -114,6 +148,8 @@ export async function GET(request: Request): Promise<Response> {
       bonuses: allScrapedBonuses,
       theaterErrors: theaterResult.errors,
       nowShowing: nowShowingData,
+      // 新增：Supabase 同步結果
+      supabaseSync: supabaseSaveResult,
     };
 
     console.log(

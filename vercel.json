@@ -11,6 +11,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/sync-movies",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/_next/static/(.*)",
