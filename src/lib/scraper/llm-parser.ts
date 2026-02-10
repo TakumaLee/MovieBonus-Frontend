@@ -127,10 +127,8 @@ export function parseLLMResponse(
 
     // Filter out items marked as outdated by LLM
     const filteredParsed = parsed.filter((item) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dateRelevance = (item as any).dateRelevance;
       if (dateRelevance === "outdated") return false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const itemConfidence = (item as any).confidence;
       if (typeof itemConfidence === "number" && itemConfidence < 0.3) return false;
       return true;
@@ -149,7 +147,6 @@ export function parseLLMResponse(
       }));
 
     // Use average confidence from LLM if available
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const confidences = filteredParsed.map((item) => (item as any).confidence).filter((c: unknown) => typeof c === "number") as number[];
     const avgConfidence = confidences.length > 0
       ? confidences.reduce((a: number, b: number) => a + b, 0) / confidences.length

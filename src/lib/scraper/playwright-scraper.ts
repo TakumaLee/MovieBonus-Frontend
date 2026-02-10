@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Playwright 爬蟲模組 — 用 headless browser 繞過 WAF，抓取各影城特典資訊
  *

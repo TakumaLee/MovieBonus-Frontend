@@ -1,5 +1,7 @@
 'use client';
 
+import { sanitizeJsonLd } from '@/lib/sanitize';
+
 interface OrganizationSchema {
   '@context': string;
   '@type': string;
@@ -254,7 +256,7 @@ export function StructuredData({ type, data }: StructuredDataProps) {
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(schema, null, 2),
+        __html: sanitizeJsonLd(schema),
       }}
     />
   );

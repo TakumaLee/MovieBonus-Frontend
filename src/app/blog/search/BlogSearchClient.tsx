@@ -42,6 +42,7 @@ import BlogLayout from '@/components/blog/BlogLayout';
 import PostCard from '@/components/blog/PostCard';
 import { BlogPost } from '@/lib/types';
 import { formatRelativeTime } from '@/lib/blog-api-client';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface BlogSearchClientProps {
   query: string;
@@ -466,7 +467,7 @@ function SearchResultItem({ post, query }: { post: BlogPost; query: string }) {
                   <h3 
                     className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2"
                     dangerouslySetInnerHTML={{ 
-                      __html: highlightText(post.title, query) 
+                      __html: sanitizeHtml(highlightText(post.title, query)) 
                     }}
                   />
                 </Link>
@@ -477,7 +478,7 @@ function SearchResultItem({ post, query }: { post: BlogPost; query: string }) {
               <p 
                 className="text-muted-foreground mb-3 line-clamp-2"
                 dangerouslySetInnerHTML={{ 
-                  __html: highlightText(post.excerpt, query) 
+                  __html: sanitizeHtml(highlightText(post.excerpt, query)) 
                 }}
               />
             )}

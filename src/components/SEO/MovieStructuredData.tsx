@@ -1,5 +1,7 @@
 'use client';
 
+import { sanitizeJsonLd } from '@/lib/sanitize';
+
 import { Movie, MoviePromotion } from '@/lib/types';
 
 interface MovieSchemaData {
@@ -169,7 +171,7 @@ export function MovieStructuredData({ movie, promotions = [], url }: MovieStruct
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(movieSchema, null, 2),
+          __html: sanitizeJsonLd(movieSchema),
         }}
       />
       
@@ -177,7 +179,7 @@ export function MovieStructuredData({ movie, promotions = [], url }: MovieStruct
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchema, null, 2),
+          __html: sanitizeJsonLd(breadcrumbSchema),
         }}
       />
       

@@ -34,7 +34,10 @@ export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const secretParam = url.searchParams.get("secret");
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && secretParam !== cronSecret) {
+  if (!cronSecret) {
+    return NextResponse.json({ error: "CRON_SECRET is required" }, { status: 503 });
+  }
+  if (authHeader !== `Bearer ${cronSecret}` && secretParam !== cronSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

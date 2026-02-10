@@ -1,5 +1,7 @@
 'use client';
 
+import { sanitizeJsonLd } from '@/lib/sanitize';
+
 import { useMemo } from 'react';
 import Head from 'next/head';
 import { BlogPost } from '@/lib/types';

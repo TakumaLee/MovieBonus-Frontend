@@ -9,10 +9,10 @@ const nextConfig: NextConfig = {
     // 空配置，避免 webpack + turbopack 衝突
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // 完全禁用 Next.js 圖片優化和處理
   images: {

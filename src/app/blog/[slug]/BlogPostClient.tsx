@@ -17,6 +17,7 @@ import { FloatingShareButtons, MobileShareBar } from '@/components/blog/ShareBut
 import PostCard from '@/components/blog/PostCard';
 import { BlogPost, RelatedPost } from '@/lib/types';
 import { trackPostView } from '@/lib/blog-api-client';
+import { sanitizeJsonLd } from '@/lib/sanitize';
 
 interface BlogPostClientProps {
   post: BlogPost;
@@ -62,7 +63,8 @@ export default function BlogPostClient({
   }
 
   breadcrumbs.push({
-    label: post.title
+    label: post.title,
+    href: `/blog/${post.slug}`
   });
 
   // Share data
@@ -81,7 +83,7 @@ export default function BlogPostClient({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(structuredData)
+            __html: sanitizeJsonLd(structuredData)
           }}
         />
       )}

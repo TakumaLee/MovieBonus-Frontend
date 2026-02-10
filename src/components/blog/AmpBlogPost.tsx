@@ -2,6 +2,7 @@
 
 import { BlogPost } from '@/lib/types';
 import { generateBlogPostStructuredData, optimizeMetaDescription } from '@/lib/blog-seo-utils';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface AmpBlogPostProps {
   post: BlogPost;
@@ -461,7 +462,7 @@ export default function AmpBlogPost({ post, canonicalUrl }: AmpBlogPostProps) {
 </html>`;
 
   return (
-    <div dangerouslySetInnerHTML={{ __html: ampHtml }} />
+    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(ampHtml) }} />
   );
 }
 

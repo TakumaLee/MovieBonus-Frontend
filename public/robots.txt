@@ -1,14 +1,9 @@
 # *
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
 
 # Host
 Host: https://paruparu.vercel.app
 
 # Sitemaps
-Sitemap: https://paruparu.vercel.app/sitemap-index.xml
 Sitemap: https://paruparu.vercel.app/sitemap.xml
-Sitemap: https://paruparu.vercel.app/sitemap-dynamic.xml

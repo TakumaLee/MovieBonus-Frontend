@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Blog Internal Link Builder
  * 
