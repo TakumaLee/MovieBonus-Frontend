@@ -103,7 +103,7 @@ export default function StructuredData({
           key={index}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(data, null, 0)
+            __html: sanitizeJsonLd(data)
           }}
         />
       ))}
@@ -174,7 +174,7 @@ export function OrganizationStructuredData({
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(organizationData, null, 0)
+        __html: sanitizeJsonLd(organizationData)
       }}
     />
   );
@@ -221,7 +221,7 @@ export function WebSiteStructuredData({
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(websiteData, null, 0)
+        __html: sanitizeJsonLd(websiteData)
       }}
     />
   );
@@ -286,7 +286,7 @@ export function BlogStructuredData({
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(blogData, null, 0)
+        __html: sanitizeJsonLd(blogData)
       }}
     />
   );

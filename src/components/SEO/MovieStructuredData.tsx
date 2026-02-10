@@ -187,7 +187,7 @@ export function MovieStructuredData({ movie, promotions = [], url }: MovieStruct
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(organizationSchema, null, 2),
+          __html: sanitizeJsonLd(organizationSchema),
         }}
       />
       
@@ -196,7 +196,7 @@ export function MovieStructuredData({ movie, promotions = [], url }: MovieStruct
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: sanitizeJsonLd({
               '@context': 'https://schema.org',
               '@type': 'FAQPage',
               mainEntity: promotions.slice(0, 5).map(promotion => ({
@@ -207,7 +207,7 @@ export function MovieStructuredData({ movie, promotions = [], url }: MovieStruct
                   text: promotion.acquisition_method || promotion.description || `參與${promotion.title}活動即可獲得相關特典。詳情請參考活動頁面說明。`,
                 },
               })),
-            }, null, 2),
+            }),
           }}
         />
       )}
