@@ -1,79 +1,36 @@
-'use client';
-
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Construction, Home, ArrowLeft, Sparkles } from 'lucide-react';
+import { Metadata } from 'next';
 import { SmartNavigation } from '@/components/SmartNavigation';
+import BonusCompare from '@/components/BonusCompare';
+
+export const metadata: Metadata = {
+  title: '特典比價 — 跨影城電影特典比較 | 特典速報 パルパル',
+  description:
+    '一次比較各大影城（威秀、國賓、秀泰、美麗華）同部電影的入場特典，找出最划算的影城特典！',
+  keywords: [
+    '電影特典比較',
+    '影城特典比價',
+    '威秀特典',
+    '國賓特典',
+    '秀泰特典',
+    '電影贈品比較',
+    'movie bonus compare',
+  ],
+  openGraph: {
+    title: '特典比價 — 跨影城電影特典比較 | 特典速報 パルパル',
+    description: '一次比較各大影城同部電影的入場特典，找出最划算的影城特典！',
+    type: 'website',
+    url: 'https://paruparu.vercel.app/bonuses',
+  },
+};
 
 export default function BonusesPage() {
   return (
     <div className="min-h-screen w-full bg-background">
       <SmartNavigation />
-      
-      <div className="container mx-auto px-4 py-16 sm:py-24">
-        <div className="max-w-2xl mx-auto text-center">
-          <Card className="border-2 border-dashed border-primary/20 bg-card/50">
-            <CardContent className="p-8 sm:p-12">
-              {/* Animated Construction Icon */}
-              <div className="relative mb-8">
-                <Construction className="w-16 h-16 sm:w-20 sm:h-20 text-primary mx-auto animate-bounce" />
-                <Sparkles className="w-6 h-6 text-yellow-500 absolute -top-2 -right-2 animate-pulse" />
-                <Sparkles className="w-4 h-4 text-blue-500 absolute -bottom-1 -left-3 animate-ping" />
-              </div>
 
-              {/* Title */}
-              <h1 className="text-3xl sm:text-4xl font-headline text-primary mb-4">
-                特典情報
-              </h1>
-              
-              {/* Under Construction Message */}
-              <div className="space-y-4 mb-8">
-                <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
-                  🚧 施工中 🚧
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  精彩的特典情報頁面正在建設中
-                </p>
-                <p className="text-base text-muted-foreground">
-                  我們正在努力為您打造最完整的電影特典資訊平台
-                </p>
-                
-                {/* Coming Soon with Animation */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-primary">即將推出</span>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse animation-delay-500"></div>
-                </div>
-              </div>
-
-              {/* Feature Preview */}
-              <div className="text-sm text-muted-foreground mb-8 space-y-2">
-                <p>🎁 限定特典追蹤</p>
-                <p>🎬 電影院獨家好康</p>
-                <p>⏰ 即時更新通知</p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild variant="default" size="lg" className="group">
-                  <Link href="/" className="flex items-center gap-2">
-                    <Home className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    返回首頁
-                  </Link>
-                </Button>
-                
-                <Button asChild variant="outline" size="lg" className="group">
-                  <Link href="/blog" className="flex items-center gap-2">
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    瀏覽文章
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <main className="container mx-auto px-4 py-8 sm:py-12">
+        <BonusCompare />
+      </main>
     </div>
   );
 }
