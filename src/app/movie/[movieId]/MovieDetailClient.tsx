@@ -14,6 +14,7 @@ import type { MoviePromotion } from '@/lib/types';
 import { format } from 'date-fns';
 import { use } from 'react';
 import { getMovieStatus, getStatusVariant, getStatusText } from '@/lib/movie-utils';
+import SocialShareCard from '@/components/SocialShareCard';
 
 interface MovieDetailClientProps {
   params: Promise<{
@@ -401,6 +402,13 @@ export function MovieDetailClient({ params }: MovieDetailClientProps) {
             <div key="bonuses-header" className="flex items-center gap-4 mb-6">
               <Gift className="w-8 h-8 text-secondary"/>
               <h2 className="text-3xl md:text-4xl font-headline text-foreground">Available Bonuses</h2>
+              <div className="ml-auto">
+                <SocialShareCard
+                  movie={movie}
+                  bonuses={bonuses}
+                  movieUrl={`/movie/${encodeURIComponent(movieId)}`}
+                />
+              </div>
             </div>
             
             <Separator key="bonuses-separator" className="mb-8" />

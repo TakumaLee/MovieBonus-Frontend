@@ -113,6 +113,35 @@ export const movies: MovieData[] = [
     dataSource: "manual",
   },
   {
+    id: "kara-no-kyoukai-5",
+    title: "空之境界劇場版：第五章 矛盾螺旋",
+    titleJa: "空の境界 第五章 矛盾螺旋",
+    titleEn: "The Garden of Sinners: Paradox Spiral",
+    releaseDate: "2026-02-13",
+    posterUrl: "/posters/kara-no-kyoukai-5.jpg",
+    synopsis:
+      "系列最關鍵篇章，全面揭示世界觀與角色命運交錯的核心真相。加害與受害交錯，殘酷青春直擊人心。兩儀式與黑桐幹也再度捲入一棟詭異的螺旋大樓所引發的謎案——居民似乎永遠無法逃出這棟建築，而死去的人又在眼前復活……",
+    genre: ["動畫", "奇幻", "驚悚"],
+    duration: 115,
+    rating: "PG-12",
+    theaterBonuses: [
+      {
+        theaterId: "vieshow",
+        theaterName: "威秀影城（車庫娛樂獨家套票）",
+        bonuses: [
+          {
+            week: 1,
+            description: "雙款 A3 特殊工藝海報套票（白衣雪地款 + 櫻花綻放款，ibon 取貨）",
+            quantity: "限量，售完為止",
+          },
+        ],
+        ticketUrl: "https://magichour.app/tgos5",
+      },
+    ],
+    isVerified: true,
+    dataSource: "scraper",
+  },
+  {
     id: "girls-band-cry-part2",
     title: "劇場版 少女樂團吶喊吧【後篇】-嗨, 未來-",
     titleJa: "劇場版 ガールズバンドクライ【後篇】",

@@ -1,5 +1,4 @@
 {
-  "name": "moviebonus-frontend",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
@@ -14,7 +13,7 @@
   "crons": [
     {
       "path": "/api/cron/sync-movies",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [

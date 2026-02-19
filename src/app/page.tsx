@@ -15,7 +15,7 @@ import { SmartNavigation } from '@/components/SmartNavigation';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import FeedbackFormNew from '@/components/FeedbackFormNew';
+import FeedbackForm from '@/components/FeedbackForm';
 import { MovieImage } from '@/components/MovieImage';
 import { DonationButton } from '@/components/DonationButton';
 import { donationConfig } from '@/lib/donation-config';
@@ -190,6 +190,67 @@ export default function Home() {
         
         
         <main className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          {/* Introduction Section */}
+          <div className="max-w-5xl mx-auto mb-12 sm:mb-16">
+            <div className="bg-gradient-to-br from-primary/5 via-card to-card/50 border rounded-2xl p-6 sm:p-8 lg:p-10">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-headline text-foreground mb-3">
+                  歡迎來到 MovieBonus 特典速報
+                </h2>
+                <p className="text-base sm:text-lg text-muted-foreground">
+                  台灣最完整的電影入場特典資訊平台
+                </p>
+              </div>
+              
+              <div className="prose prose-slate dark:prose-invert max-w-none">
+                <p className="text-base text-muted-foreground leading-relaxed mb-4">
+                  <strong className="text-foreground">MovieBonus</strong> 整合威秀、秀泰、國賓等各大院線的特典發放資訊，讓你不再錯過任何限定好康！從日本動畫電影的精美周邊、好萊塢大片的限量海報，到獨立電影的特色收藏品，我們提供即時更新的完整資訊。
+                </p>
+                
+                <div className="grid sm:grid-cols-3 gap-4 my-6">
+                  <div className="bg-card/80 backdrop-blur-sm border rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-primary mb-1">19+</div>
+                    <div className="text-sm text-muted-foreground">熱門電影</div>
+                  </div>
+                  <div className="bg-card/80 backdrop-blur-sm border rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-primary mb-1">即時</div>
+                    <div className="text-sm text-muted-foreground">特典更新</div>
+                  </div>
+                  <div className="bg-card/80 backdrop-blur-sm border rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-primary mb-1">完整</div>
+                    <div className="text-sm text-muted-foreground">院線涵蓋</div>
+                  </div>
+                </div>
+                
+                <p className="text-base text-muted-foreground leading-relaxed mb-4">
+                  無論你是特典收藏家、動畫狂熱粉絲，還是單純想知道「這部電影有沒有特典」，MovieBonus 都能幫你快速找到答案。我們提供電影上映時間、特典種類、發放數量、領取方式等完整資訊，讓你輕鬆規劃觀影行程。
+                </p>
+                
+                <div className="flex flex-wrap gap-3 justify-center mt-6">
+                  <Link 
+                    href="/guide" 
+                    className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    <Film className="w-4 h-4" />
+                    使用指南
+                  </Link>
+                  <Link 
+                    href="/about" 
+                    className="inline-flex items-center gap-2 bg-card border text-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-accent transition-colors text-sm"
+                  >
+                    關於我們
+                  </Link>
+                  <Link 
+                    href="/blog" 
+                    className="inline-flex items-center gap-2 bg-card border text-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-accent transition-colors text-sm"
+                  >
+                    📚 特典專欄
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <Tabs defaultValue="now-playing" className="max-w-7xl mx-auto">
             <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-12 mb-8">
               <TabsTrigger value="now-playing" className="text-sm sm:text-base">正在上映</TabsTrigger>
@@ -311,7 +372,7 @@ export default function Home() {
       </footer>
       
       {/* Feedback Form */}
-      <FeedbackFormNew />
+      <FeedbackForm />
       
       {/* Floating Donation Button */}
       {donationConfig.showFloatingButton && (

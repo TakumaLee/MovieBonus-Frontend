@@ -20,6 +20,7 @@ import {
   Search,
   Sparkles
 } from 'lucide-react';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface NavItem {
   title: string;
@@ -151,6 +152,7 @@ export function SmartNavigation() {
 
             {/* Desktop Action Buttons */}
             <div className="hidden lg:flex items-center gap-3">
+              <NotificationBell />
               <Button
                 variant="ghost"
                 size="icon"
@@ -216,8 +218,12 @@ export function SmartNavigation() {
                   ))}
                 </div>
 
-                {/* Mobile Search Button */}
-                <div className="mt-6 pt-6 border-t">
+                {/* Mobile Search & Notification */}
+                <div className="mt-6 pt-6 border-t space-y-3">
+                  <div className="flex items-center gap-2 px-3">
+                    <NotificationBell />
+                    <span className="text-sm text-muted-foreground">新特典通知</span>
+                  </div>
                   <Button
                     variant="outline"
                     className="w-full justify-start"
