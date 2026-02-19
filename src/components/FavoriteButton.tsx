@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { User } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+// ============================================================
+// localStorage helpers（未登入 fallback）
+// ============================================================
 
 const STORAGE_KEY = "moviebonus_favorites";
 
-/**
- * 取得收藏清單
- */
 export function getFavorites(): string[] {
   if (typeof window === "undefined") return [];
   try {
@@ -17,28 +20,82 @@ export function getFavorites(): string[] {
   }
 }
 
-/**
- * 檢查是否已收藏
- */
+function setLocalFavorites(ids: string[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+  } catch {}
+}
+
 export function isFavorited(movieId: string): boolean {
   return getFavorites().includes(movieId);
 }
 
-/**
- * 切換收藏狀態
- */
-function toggleFavorite(movieId: string): boolean {
-  const favorites = getFavorites();
-  const index = favorites.indexOf(movieId);
-  if (index === -1) {
-    favorites.push(movieId);
-  } else {
-    favorites.splice(index, 1);
+// ============================================================
+// Supabase favorites helpers（已登入）
+// ============================================================
+
+async function fetchSupabaseFavorites(userId: string): Promise<string[]> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("movie_id")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[FavoriteButton] fetchSupabaseFavorites error:", error.message);
+    return [];
   }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-  } catch {}
-  return index === -1; // return new state: true = now favorited
+  return (data ?? []).map((row: { movie_id: string }) => row.movie_id);
+}
+
+async function addSupabaseFavorite(userId: string, movieId: string): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("favorites")
+    .insert({ user_id: userId, movie_id: movieId });
+
+  if (error && error.code !== "23505") {
+    // 23505 = unique_violation（已存在，忽略）
+    console.error("[FavoriteButton] addSupabaseFavorite error:", error.message);
+  }
+}
+
+async function removeSupabaseFavorite(userId: string, movieId: string): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("favorites")
+    .delete()
+    .eq("user_id", userId)
+    .eq("movie_id", movieId);
+
+  if (error) {
+    console.error("[FavoriteButton] removeSupabaseFavorite error:", error.message);
+  }
+}
+
+/**
+ * 將 localStorage 的收藏遷移到 Supabase（登入後一次性執行）
+ */
+async function migrateLocalFavoritesToSupabase(userId: string): Promise<void> {
+  const localIds = getFavorites();
+  if (localIds.length === 0) return;
+
+  const supabase = getSupabaseBrowserClient();
+  const rows = localIds.map((movie_id) => ({ user_id: userId, movie_id }));
+
+  const { error } = await supabase.from("favorites").upsert(rows, {
+    onConflict: "user_id,movie_id",
+    ignoreDuplicates: true,
+  });
+
+  if (error) {
+    console.error("[FavoriteButton] migrateLocalFavoritesToSupabase error:", error.message);
+    return;
+  }
+
+  // 清除 localStorage（已遷移）
+  setLocalFavorites([]);
+  console.log(`[FavoriteButton] Migrated ${localIds.length} favorites to Supabase.`);
 }
 
 // ============================================================
@@ -53,9 +110,10 @@ function emitFavoriteChange() {
   }
 }
 
-/**
- * Hook: 監聽收藏變化
- */
+// ============================================================
+// Hook: 監聽收藏變化（localStorage 模式，供未登入頁面使用）
+// ============================================================
+
 export function useFavorites(): string[] {
   const [favorites, setFavorites] = useState<string[]>([]);
 
@@ -93,29 +151,114 @@ export default function FavoriteButton({
   const [favorited, setFavorited] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
+  // 追蹤上一個 userId，用來偵測「剛登入」事件
+  const prevUserIdRef = useRef<string | null>(null);
+
+  // ── 初始化：取得 Supabase session + 訂閱 auth 狀態變化 ──
   useEffect(() => {
-    setFavorited(isFavorited(movieId));
-    setMounted(true);
+    let isMounted = true;
+    const supabase = getSupabaseBrowserClient();
+
+    // 取得當前 session
+    supabase.auth.getUser().then(({ data }) => {
+      if (!isMounted) return;
+      setUser(data.user ?? null);
+    });
+
+    // 監聽 auth 狀態變化（登入 / 登出）
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!isMounted) return;
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // ── 依據 user 讀取收藏狀態 ──
+  useEffect(() => {
+    let isMounted = true;
+
+    async function load() {
+      if (user) {
+        const justLoggedIn = prevUserIdRef.current === null && user.id !== null;
+
+        // 剛登入 → 先把 localStorage 遷移過去
+        if (justLoggedIn) {
+          await migrateLocalFavoritesToSupabase(user.id);
+        }
+        prevUserIdRef.current = user.id;
+
+        // 從 Supabase 讀取收藏狀態
+        const ids = await fetchSupabaseFavorites(user.id);
+        if (isMounted) {
+          setFavorited(ids.includes(movieId));
+        }
+      } else {
+        // 未登入 → 讀 localStorage
+        prevUserIdRef.current = null;
+        if (isMounted) {
+          setFavorited(isFavorited(movieId));
+        }
+      }
+
+      if (isMounted) setMounted(true);
+    }
+
+    load();
+
+    return () => { isMounted = false; };
+  }, [user, movieId]);
+
+  // ── 監聽 localStorage 收藏變化（未登入跨元件同步）──
+  useEffect(() => {
+    if (user) return; // 登入狀態不需監聽 localStorage event
 
     const handler = () => setFavorited(isFavorited(movieId));
     window.addEventListener(FAVORITE_CHANGE_EVENT, handler);
     return () => window.removeEventListener(FAVORITE_CHANGE_EVENT, handler);
-  }, [movieId]);
+  }, [user, movieId]);
 
+  // ── 點擊處理 ──
   const handleClick = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const newState = toggleFavorite(movieId);
+
+      const newState = !favorited;
       setFavorited(newState);
-      emitFavoriteChange();
 
       // Animate
       setAnimating(true);
       setTimeout(() => setAnimating(false), 300);
+
+      if (user) {
+        // 已登入 → 操作 Supabase
+        if (newState) {
+          await addSupabaseFavorite(user.id, movieId);
+        } else {
+          await removeSupabaseFavorite(user.id, movieId);
+        }
+      } else {
+        // 未登入 → 操作 localStorage
+        const favorites = getFavorites();
+        const index = favorites.indexOf(movieId);
+        if (newState && index === -1) {
+          favorites.push(movieId);
+        } else if (!newState && index !== -1) {
+          favorites.splice(index, 1);
+        }
+        setLocalFavorites(favorites);
+        emitFavoriteChange();
+      }
     },
-    [movieId]
+    [favorited, user, movieId]
   );
 
   if (!mounted) return null;
